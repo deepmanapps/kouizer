@@ -3,6 +3,8 @@ package deepmanapps.kouizer.service;
 import deepmanapps.kouizer.domain.*;
 import deepmanapps.kouizer.dto.OpenTriviaQuestionDTO;
 import deepmanapps.kouizer.dto.OpenTriviaResponse;
+import deepmanapps.kouizer.dto.QuestionResponseDTO;
+import deepmanapps.kouizer.mapper.QuestionMapper;
 import deepmanapps.kouizer.repository.CategoryRepository;
 import deepmanapps.kouizer.repository.QuestionRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +26,7 @@ public class QuestionService {
     private final QuestionRepository questionRepository;
     private final CategoryRepository categoryRepository;
     private final RestTemplate restTemplate = new RestTemplate(); // Or inject via Bean
-
+    private final QuestionMapper questionMapper;
     private static final String OPEN_TRIVIA_URL = "https://opentdb.com/api.php?amount=10";
 
     /**
@@ -32,19 +34,22 @@ public class QuestionService {
      * Tries to find questions in DB. If not enough, fetches from API, saves them, and returns.
      */
     @Transactional
-    public List<Question> getQuizQuestions(Long categoryId, int limit) {
+    public List<QuestionResponseDTO> getQuizQuestions(Long categoryId, int limit) {
         // 1. Try to fetch from local DB first
         List<Question> questions = questionRepository.findRandomQuestionsByCategory(categoryId, limit);
+        //List<QuestionResponseDTO> questions = questionRepository.findAll();
 
         // 2. If we don't have enough questions, fetch from API, save, and retry
         if (questions.size() < limit) {
             log.info("Not enough questions in DB for category {}. Fetching from OpenTriviaDB...", categoryId);
             fetchAndSaveQuestionsFromApi(categoryId);
             // Fetch again after saving
-            questions = questionRepository.findRandomQuestionsByCategory(categoryId, limit);
+            //questions = questionRepository.findRandomQuestionsByCategory(categoryId, limit);
+            questions = questionRepository.findAll();
+
         }
         
-        return questions;
+        return questionMapper.toQuestionResponseDTOs(questions);
     }
 
     /**

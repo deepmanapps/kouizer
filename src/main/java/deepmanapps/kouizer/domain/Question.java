@@ -47,7 +47,7 @@ public class Question {
     private User creator; // Nullable if the question comes from the API and has no specific "user" creator
 
     // "orphanRemoval = true" ensures if you remove an answer from this list, it is deleted from the DB
-    @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Answer> answers = new ArrayList<>();
 
     // Helper method to add answers conveniently

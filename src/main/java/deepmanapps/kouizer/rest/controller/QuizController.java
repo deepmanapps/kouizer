@@ -4,8 +4,8 @@ import deepmanapps.kouizer.domain.Answer;
 import deepmanapps.kouizer.domain.Category;
 import deepmanapps.kouizer.domain.Question;
 import deepmanapps.kouizer.domain.User;
-import deepmanapps.kouizer.dto.AnswerRequest;
 import deepmanapps.kouizer.dto.QuestionCreationRequest;
+import deepmanapps.kouizer.dto.QuestionResponseDTO;
 import deepmanapps.kouizer.dto.QuizStartRequest;
 import deepmanapps.kouizer.repository.CategoryRepository;
 import deepmanapps.kouizer.service.QuestionService;
@@ -22,23 +22,17 @@ import java.util.stream.Collectors;
 @RequestMapping("/api")
 @RequiredArgsConstructor
 public class QuizController {
-
     private final QuestionService questionService;
     private final UserService userService;
     private final CategoryRepository categoryRepository; 
-    // NOTE: In a professional setup, categoryRepository lookup should be in a CategoryService.
 
-    /**
-     * Endpoint to start a quiz and fetch questions.
-     * URI: GET /api/quiz/start
-     */
     @GetMapping("/quiz/start")
-    public ResponseEntity<List<Question>> startQuiz(@RequestBody QuizStartRequest request) {
+    public ResponseEntity<List<QuestionResponseDTO>> startQuiz(@RequestBody QuizStartRequest request) {
         if (request.getAmount() <= 0 || request.getCategoryId() == null) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
-        List<Question> questions = questionService.getQuizQuestions(
+        List<QuestionResponseDTO> questions = questionService.getQuizQuestions(
                 request.getCategoryId(), 
                 request.getAmount());
 
