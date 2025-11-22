@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: kouizer
+  profiles:
+    active: dev
+  jpa:
+    hibernate:
+      # Automatically create or update the database schema
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+# Define the server port
+server:
+  port: 8080
