@@ -121,7 +121,7 @@ public class QuestionService {
     }
 
 
-    private OpenTriviaResponse fetchQuestionsQueryFromApi(Long localCategoryId,int limit,Difficulty difficulty) {
+    public OpenTriviaResponse fetchQuestionsQueryFromApi(Long localCategoryId,int limit,Difficulty difficulty) {
         // Retrieve the external ID (e.g. Local ID 1 maps to External ID 9 "General Knowledge")
         Category category = categoryRepository.findById(localCategoryId)
                 .orElseThrow(() -> new RuntimeException("Category not found"));
@@ -131,7 +131,7 @@ public class QuestionService {
             return null;
         }
 
-        String url = OPEN_TRIVIA_URL + limit + "&category=" + category.getExternalId() + "&difficulty=" + difficulty;
+        String url = OPEN_TRIVIA_URL + limit + "&category=" + category.getExternalId() + "&difficulty=" + difficulty.toString().toLowerCase();
 
         OpenTriviaResponse response = null;
         try {

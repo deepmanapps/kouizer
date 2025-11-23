@@ -1,9 +1,7 @@
 package deepmanapps.kouizer.rest.controller;
 
-import deepmanapps.kouizer.domain.Answer;
-import deepmanapps.kouizer.domain.Category;
-import deepmanapps.kouizer.domain.Question;
-import deepmanapps.kouizer.domain.User;
+import deepmanapps.kouizer.domain.*;
+import deepmanapps.kouizer.dto.OpenTriviaResponse;
 import deepmanapps.kouizer.dto.QuestionCreationRequest;
 import deepmanapps.kouizer.dto.QuestionResponseDTO;
 import deepmanapps.kouizer.dto.QuizStartRequest;
@@ -33,8 +31,21 @@ public class QuizController {
         }
 
         List<QuestionResponseDTO> questions = questionService.getQuizQuestions(
-                request.getCategoryId(), 
+                request.getCategoryId(),
                 request.getAmount());
+
+        return ResponseEntity.ok(questions);
+    }
+
+    @GetMapping("/quiz/opentdb/start")
+    public ResponseEntity<OpenTriviaResponse> startQuizFromOpentDb(@RequestBody QuizStartRequest request) {
+        if (request.getAmount() <= 0 || request.getCategoryId() == null) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+
+        OpenTriviaResponse questions = questionService.fetchQuestionsQueryFromApi(request.getCategoryId(),
+                request.getAmount(),
+                Difficulty.valueOf(request.getDifficulty()));
 
         return ResponseEntity.ok(questions);
     }
