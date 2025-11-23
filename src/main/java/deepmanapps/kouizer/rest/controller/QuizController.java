@@ -36,8 +36,6 @@ public class QuizController {
                 request.getCategoryId(), 
                 request.getAmount());
 
-        // WARNING: In production, you must use a Response DTO here to strip away the 
-        // 'isCorrect' flag before sending questions to the client.
         return ResponseEntity.ok(questions);
     }
 
@@ -70,7 +68,7 @@ public class QuizController {
                         .isCorrect(answerDto.isCorrect())
                         .question(newQuestion) // Link Answer back to Question
                         .build())
-                .collect(Collectors.toList());
+                .toList();
 
         newQuestion.getAnswers().addAll(answers);
 

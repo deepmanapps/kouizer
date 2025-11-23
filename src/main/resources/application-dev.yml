@@ -5,6 +5,7 @@ spring:
   config:
     activate:
       on-profile: dev
+    import: classpath:category-mapping.yml
   datasource:
     # H2 In-Memory Configuration
     url: jdbc:h2:mem:kouizerdb

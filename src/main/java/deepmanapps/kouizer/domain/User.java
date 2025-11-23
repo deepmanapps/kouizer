@@ -30,7 +30,7 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    // Simple role management (e.g., "ROLE_USER", "ROLE_ADMIN")
+    // ("ROLE_USER", "ROLE_ADMIN")
     private String role;
 
     @OneToMany(mappedBy = "creator", fetch = FetchType.LAZY)

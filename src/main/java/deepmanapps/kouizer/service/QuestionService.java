@@ -27,7 +27,7 @@ public class QuestionService {
     private final CategoryRepository categoryRepository;
     private final RestTemplate restTemplate = new RestTemplate(); // Or inject via Bean
     private final QuestionMapper questionMapper;
-    private static final String OPEN_TRIVIA_URL = "https://opentdb.com/api.php?amount=10";
+    private static final String OPEN_TRIVIA_URL = "https://opentdb.com/api.php?amount=";
 
     /**
      * Main method to get a quiz.
@@ -37,24 +37,20 @@ public class QuestionService {
     public List<QuestionResponseDTO> getQuizQuestions(Long categoryId, int limit) {
         // 1. Try to fetch from local DB first
         List<Question> questions = questionRepository.findRandomQuestionsByCategory(categoryId, limit);
-        //List<QuestionResponseDTO> questions = questionRepository.findAll();
 
         // 2. If we don't have enough questions, fetch from API, save, and retry
         if (questions.size() < limit) {
             log.info("Not enough questions in DB for category {}. Fetching from OpenTriviaDB...", categoryId);
-            fetchAndSaveQuestionsFromApi(categoryId);
+            fetchAndSaveQuestionsFromApi(categoryId,limit);
             // Fetch again after saving
-            //questions = questionRepository.findRandomQuestionsByCategory(categoryId, limit);
-            questions = questionRepository.findAll();
+            questions = questionRepository.findRandomQuestionsByCategory(categoryId, limit);
+
 
         }
         
         return questionMapper.toQuestionResponseDTOs(questions);
     }
 
-    /**
-     * User-created question logic
-     */
     @Transactional
     public Question createCustomQuestion(Question question, User user) {
         question.setSource(QuestionSource.USER);
@@ -67,7 +63,7 @@ public class QuestionService {
     /**
      * INTERNAL: Fetches from API and maps to Entities
      */
-    private void fetchAndSaveQuestionsFromApi(Long localCategoryId) {
+    private void fetchAndSaveQuestionsFromApi(Long localCategoryId,int limit) {
         // Retrieve the external ID (e.g. Local ID 1 maps to External ID 9 "General Knowledge")
         Category category = categoryRepository.findById(localCategoryId)
                 .orElseThrow(() -> new RuntimeException("Category not found"));
@@ -77,7 +73,7 @@ public class QuestionService {
             return;
         }
 
-        String url = OPEN_TRIVIA_URL + "&category=" + category.getExternalId();
+        String url = OPEN_TRIVIA_URL +limit+ "&category=" + category.getExternalId();
         
         try {
             OpenTriviaResponse response = restTemplate.getForObject(url, OpenTriviaResponse.class);
@@ -122,5 +118,36 @@ public class QuestionService {
         } catch (Exception e) {
             log.error("Error fetching from OpenTriviaDB", e);
         }
+    }
+
+
+    private OpenTriviaResponse fetchQuestionsQueryFromApi(Long localCategoryId,int limit,Difficulty difficulty) {
+        // Retrieve the external ID (e.g. Local ID 1 maps to External ID 9 "General Knowledge")
+        Category category = categoryRepository.findById(localCategoryId)
+                .orElseThrow(() -> new RuntimeException("Category not found"));
+
+        if (category.getExternalId() == null) {
+            log.warn("Category {} has no external ID. Cannot fetch from API.", category.getName());
+            return null;
+        }
+
+        String url = OPEN_TRIVIA_URL + limit + "&category=" + category.getExternalId() + "&difficulty=" + difficulty;
+
+        OpenTriviaResponse response = null;
+        try {
+            response = restTemplate.getForObject(url, OpenTriviaResponse.class);
+
+            if (response != null && response.getResults() != null) {
+                log.error("Data from OpenTriviaDB is empty");
+            }
+
+            log.info("Fetched new questions from API.");
+            return response;
+
+        } catch (Exception e) {
+            log.error("Error fetching from OpenTriviaDB", e);
+            return null;
+        }
+
     }
 }
