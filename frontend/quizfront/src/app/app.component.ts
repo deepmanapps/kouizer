@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
-// --- MOCK DATA & INTERFACES ---
+// --- INTERFACES ---
 interface Question {
   id: number;
   text: string;
@@ -11,10 +11,11 @@ interface Question {
 }
 
 interface QuizConfig {
-  difficulty: string;
-  questionCount: number;
-  source: string;
-  category: string;
+  amount: number;      // Number of Questions
+  category: any;       // Category ID or 'any'
+  difficulty: string;  // 'any', 'easy', 'medium', 'hard'
+  type: string;        // 'any', 'multiple', 'boolean'
+  source: string;      // 'local' or 'custom'
 }
 
 // Interface for the Form Data
@@ -30,244 +31,7 @@ interface CustomQuestionForm {
   selector: 'app-root',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  template: `
-    <div class="min-h-screen bg-gray-50 font-sans text-gray-800 flex flex-col items-center justify-center p-4">
-
-      <div *ngIf="currentView === 'home'" class="w-full max-w-md bg-white p-8 rounded-xl shadow-lg border border-gray-200 text-center">
-        <div class="mb-6">
-          <div class="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-          </div>
-          <h1 class="text-2xl font-bold text-gray-900">Quiz App</h1>
-          <p class="text-gray-500 mt-2">Test your knowledge</p>
-        </div>
-
-        <div class="mb-6 text-left">
-          <label class="block text-sm font-medium text-gray-700 mb-1">Nickname</label>
-          <input
-            type="text"
-            [(ngModel)]="nickname"
-            placeholder="Ex: QuizMaster99"
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
-          />
-          <p *ngIf="showError && !nickname" class="text-red-500 text-xs mt-1">Please enter a nickname</p>
-        </div>
-
-        <div class="space-y-3">
-          <button
-            (click)="startQuiz()"
-            class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition shadow-md flex items-center justify-center gap-2">
-            <span>Start Quiz</span>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
-          </button>
-
-          <div class="grid grid-cols-2 gap-3">
-            <button
-              (click)="goToOptions()"
-              class="w-full bg-white hover:bg-gray-50 text-gray-700 font-semibold py-3 px-2 rounded-lg border border-gray-300 transition flex items-center justify-center gap-2 text-sm">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" /></svg>
-              <span>Options</span>
-            </button>
-            <button
-              (click)="goToCreate()"
-              class="w-full bg-white hover:bg-gray-50 text-indigo-600 font-semibold py-3 px-2 rounded-lg border border-indigo-200 transition flex items-center justify-center gap-2 text-sm">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
-              <span>Create</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div *ngIf="currentView === 'create'" class="w-full max-w-2xl bg-white p-6 rounded-xl shadow-lg border border-gray-200">
-        <div class="flex items-center justify-between mb-6 border-b pb-4">
-          <div>
-            <h2 class="text-xl font-bold text-gray-800">Create Custom Quiz</h2>
-            <p class="text-sm text-gray-500">Add questions to your local quiz bank</p>
-          </div>
-          <button (click)="goHome()" class="text-gray-400 hover:text-gray-600">✕</button>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm font-bold text-gray-700 mb-1">Question Text</label>
-              <textarea [(ngModel)]="form.text" rows="3" class="w-full border-gray-300 border rounded-lg p-2.5 focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g. What is the capital of France?"></textarea>
-            </div>
-
-            <div>
-              <label class="block text-sm font-bold text-green-700 mb-1">Correct Answer</label>
-              <input type="text" [(ngModel)]="form.correctAnswer" class="w-full border-green-300 border rounded-lg p-2.5 bg-green-50 focus:ring-green-500 focus:border-green-500" placeholder="e.g. Paris">
-            </div>
-
-            <div>
-              <label class="block text-sm font-bold text-red-700 mb-1">Incorrect Answers</label>
-              <div class="space-y-2">
-                <input type="text" [(ngModel)]="form.incorrect1" class="w-full border-red-300 border rounded-lg p-2 bg-red-50 focus:ring-red-500 focus:border-red-500" placeholder="Wrong Option 1">
-                <input type="text" [(ngModel)]="form.incorrect2" class="w-full border-red-300 border rounded-lg p-2 bg-red-50 focus:ring-red-500 focus:border-red-500" placeholder="Wrong Option 2">
-                <input type="text" [(ngModel)]="form.incorrect3" class="w-full border-red-300 border rounded-lg p-2 bg-red-50 focus:ring-red-500 focus:border-red-500" placeholder="Wrong Option 3">
-              </div>
-            </div>
-
-            <button (click)="addCustomQuestion()" class="w-full bg-gray-800 text-white font-bold py-3 rounded-lg hover:bg-black transition">
-              Add Question to Bank
-            </button>
-          </div>
-
-          <div class="bg-gray-50 rounded-xl p-4 border border-gray-200 flex flex-col h-full">
-            <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wide mb-3">Your Question Bank</h3>
-
-            <div class="flex-1 overflow-y-auto max-h-64 space-y-2 mb-4">
-              <div *ngIf="customQuestions.length === 0" class="text-center text-gray-400 py-8 italic">
-                No questions added yet.
-              </div>
-              <div *ngFor="let q of customQuestions; let i = index" class="bg-white p-3 rounded border border-gray-200 text-sm shadow-sm flex justify-between items-start">
-                <div>
-                  <span class="font-bold text-indigo-600 mr-2">Q{{i+1}}.</span>
-                  <span class="text-gray-700">{{ q.text }}</span>
-                </div>
-                <button (click)="removeCustomQuestion(i)" class="text-red-400 hover:text-red-600 font-bold ml-2">×</button>
-              </div>
-            </div>
-
-            <div class="mt-auto pt-4 border-t border-gray-200">
-                <div class="flex justify-between items-center mb-2">
-                  <span class="text-sm font-medium">Total Questions: {{ customQuestions.length }}</span>
-                </div>
-                <button
-                 [disabled]="customQuestions.length === 0"
-                 (click)="playCustomQuiz()"
-                 class="w-full bg-indigo-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-3 rounded-lg hover:bg-indigo-700 transition shadow-md">
-                 Play My Quiz
-                </button>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-
-      <div *ngIf="currentView === 'options'" class="w-full max-w-md bg-white p-8 rounded-xl shadow-lg border border-gray-200">
-        <div class="flex items-center justify-between mb-6 border-b pb-4">
-          <h2 class="text-xl font-bold text-gray-800">Configuration</h2>
-          <button (click)="goHome()" class="text-gray-400 hover:text-gray-600">✕</button>
-        </div>
-
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Source of Data</label>
-            <select [(ngModel)]="config.source" class="w-full border-gray-300 border rounded-lg p-2.5 bg-gray-50 focus:ring-indigo-500 focus:border-indigo-500">
-              <option value="local">Local Mock Data</option>
-              <option value="custom" [disabled]="customQuestions.length === 0">Custom (Created by you)</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="mt-8">
-          <button (click)="goHome()" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 transition">
-            Save & Return
-          </button>
-        </div>
-      </div>
-
-
-      <div *ngIf="currentView === 'quiz'" class="w-full max-w-xl">
-
-        <div class="flex justify-between items-end mb-4 px-2">
-          <div>
-            <span class="text-xs font-bold text-indigo-600 tracking-wider uppercase">Question {{ currentQuestionIndex + 1 }} of {{ questions.length }}</span>
-            <h2 class="text-sm text-gray-500">Topic: {{ config.source === 'custom' ? 'Custom Quiz' : 'Local Data' }}</h2>
-          </div>
-        </div>
-
-        <div class="w-full bg-gray-200 rounded-full h-2.5 mb-6">
-          <div class="bg-indigo-600 h-2.5 rounded-full transition-all duration-300" [style.width.%]="((currentQuestionIndex + 1) / questions.length) * 100"></div>
-        </div>
-
-        <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-          <div class="p-8">
-            <h3 class="text-xl font-bold text-gray-900 mb-6 leading-relaxed">
-              {{ questions[currentQuestionIndex].text }}
-            </h3>
-
-            <div class="space-y-3">
-              <div
-                *ngFor="let option of questions[currentQuestionIndex].options; let i = index"
-                (click)="selectAnswer(i)"
-                [class.bg-indigo-50]="userAnswers[currentQuestionIndex] === i"
-                [class.border-indigo-500]="userAnswers[currentQuestionIndex] === i"
-                [class.text-indigo-700]="userAnswers[currentQuestionIndex] === i"
-                class="p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition flex items-center group">
-
-                <div class="w-5 h-5 rounded-full border border-gray-300 mr-3 flex items-center justify-center group-hover:border-indigo-400"
-                     [class.border-indigo-600]="userAnswers[currentQuestionIndex] === i">
-                  <div *ngIf="userAnswers[currentQuestionIndex] === i" class="w-2.5 h-2.5 bg-indigo-600 rounded-full"></div>
-                </div>
-
-                <span class="font-medium">{{ option }}</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="bg-gray-50 px-8 py-4 border-t border-gray-100 flex justify-between items-center">
-
-            <button
-              (click)="prevQuestion()"
-              [disabled]="currentQuestionIndex === 0"
-              [class.opacity-50]="currentQuestionIndex === 0"
-              class="text-gray-600 font-semibold hover:text-gray-900 flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-200 transition disabled:cursor-not-allowed">
-              Back
-            </button>
-
-            <button
-              *ngIf="currentQuestionIndex < questions.length - 1"
-              (click)="nextQuestion()"
-              class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-medium transition flex items-center gap-2 shadow-sm">
-              Next
-            </button>
-
-            <button
-              *ngIf="currentQuestionIndex === questions.length - 1"
-              (click)="finishQuiz()"
-              class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition shadow-sm">
-              Finish Quiz
-            </button>
-
-          </div>
-        </div>
-      </div>
-
-
-      <div *ngIf="currentView === 'score'" class="w-full max-w-md text-center">
-        <div class="bg-white p-8 rounded-xl shadow-lg border border-gray-200">
-
-          <div class="mb-6 relative inline-block">
-            <div class="w-24 h-24 bg-yellow-100 text-yellow-500 rounded-full flex items-center justify-center mx-auto animate-bounce">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
-            </div>
-          </div>
-
-          <h2 class="text-3xl font-bold text-gray-900 mb-2">Quiz Completed!</h2>
-          <p class="text-gray-500 mb-8">Great job, <span class="font-bold text-indigo-600">{{ nickname }}</span>!</p>
-
-          <div class="bg-gray-50 rounded-xl p-6 mb-8 border border-gray-100">
-            <p class="text-sm text-gray-500 uppercase tracking-wide font-bold mb-2">Your Score</p>
-            <div class="text-5xl font-extrabold text-indigo-600">
-              {{ score }}<span class="text-2xl text-gray-400 font-medium">/{{ questions.length }}</span>
-            </div>
-          </div>
-
-          <button (click)="goHome()" class="w-full bg-gray-900 text-white font-bold py-3 rounded-lg hover:bg-gray-800 transition flex items-center justify-center gap-2">
-            Start New Quiz
-          </button>
-
-        </div>
-      </div>
-
-    </div>
-  `,
+  templateUrl: './app.component.html',
   styles: []
 })
 export class AppComponent {
@@ -277,12 +41,32 @@ export class AppComponent {
   nickname: string = '';
   showError: boolean = false;
 
+  // OpenTDB Style Configuration
   config: QuizConfig = {
-    difficulty: 'medium',
-    questionCount: 3,
-    source: 'local', // Changed default to local
-    category: 'General Knowledge'
+    amount: 5,
+    category: 'any',
+    difficulty: 'any',
+    type: 'any',
+    source: 'local'
   };
+
+  // Standard OpenTDB Categories
+  categories = [
+    { id: 9, name: 'General Knowledge' },
+    { id: 10, name: 'Entertainment: Books' },
+    { id: 11, name: 'Entertainment: Film' },
+    { id: 12, name: 'Entertainment: Music' },
+    { id: 14, name: 'Entertainment: Television' },
+    { id: 15, name: 'Entertainment: Video Games' },
+    { id: 17, name: 'Science & Nature' },
+    { id: 18, name: 'Science: Computers' },
+    { id: 19, name: 'Science: Mathematics' },
+    { id: 21, name: 'Sports' },
+    { id: 22, name: 'Geography' },
+    { id: 23, name: 'History' },
+    { id: 27, name: 'Animals' },
+    { id: 28, name: 'Vehicles' }
+  ];
 
   // Creator Form Data
   form: CustomQuestionForm = {
@@ -315,16 +99,13 @@ export class AppComponent {
       return;
     }
 
-    // Prepare options array with correct answer at index 0 initially
     let options = [
       this.form.correctAnswer,
       this.form.incorrect1,
       this.form.incorrect2,
       this.form.incorrect3
-    ].filter(opt => opt && opt.trim() !== ''); // Remove empty option fields
+    ].filter(opt => opt && opt.trim() !== '');
 
-    // Shuffle Options to randomize position of correct answer
-    // We map the correct answer string to track it, shuffle, then find new index
     const correctAnswerText = this.form.correctAnswer;
 
     // Simple shuffle
@@ -333,7 +114,7 @@ export class AppComponent {
     const newIndex = options.indexOf(correctAnswerText);
 
     const newQ: Question = {
-      id: Date.now(), // Unique ID based on timestamp
+      id: Date.now(),
       text: this.form.text,
       options: options,
       correctIndex: newIndex
@@ -341,14 +122,7 @@ export class AppComponent {
 
     this.customQuestions.push(newQ);
 
-    // Reset Form
-    this.form = {
-      text: '',
-      correctAnswer: '',
-      incorrect1: '',
-      incorrect2: '',
-      incorrect3: ''
-    };
+    this.form = { text: '', correctAnswer: '', incorrect1: '', incorrect2: '', incorrect3: '' };
   }
 
   removeCustomQuestion(index: number) {
@@ -357,10 +131,7 @@ export class AppComponent {
 
   playCustomQuiz() {
     this.config.source = 'custom';
-    this.config.category = 'My Custom Quiz';
-
     if (!this.nickname) this.nickname = "Creator";
-
     this.startQuiz();
   }
 
@@ -378,16 +149,23 @@ export class AppComponent {
     this.currentQuestionIndex = 0;
     this.score = 0;
 
-    // Simplified logic: only local or custom
+    // Load Data based on Source
     if (this.config.source === 'custom') {
         this.questions = [...this.customQuestions];
     } else {
+        // NOTE: In a real app with API, here is where you would use
+        // this.config.category, this.config.difficulty, etc. to fetch URL
         this.questions = [...this.localQuestions];
     }
 
-    // Initialize answers array based on fetched/local questions
     this.userAnswers = new Array(this.questions.length).fill(null);
     this.currentView = 'quiz';
+  }
+
+  // --- UTILS ---
+  getCategoryName(id: number): string {
+    const cat = this.categories.find(c => c.id === id);
+    return cat ? cat.name : 'Unknown';
   }
 
   // --- NAVIGATION ---
