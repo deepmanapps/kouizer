@@ -19,12 +19,13 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:4200")
 public class QuizController {
     private final QuestionService questionService;
     private final UserService userService;
     private final CategoryRepository categoryRepository; 
 
-    @GetMapping("/quiz/start")
+    @PostMapping("/quiz/start")
     public ResponseEntity<List<QuestionResponseDTO>> startQuiz(@RequestBody QuizStartRequest request) {
         if (request.getAmount() <= 0 || request.getCategoryId() == null) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -33,11 +34,10 @@ public class QuizController {
         List<QuestionResponseDTO> questions = questionService.getQuizQuestions(
                 request.getCategoryId(),
                 request.getAmount());
-
         return ResponseEntity.ok(questions);
     }
 
-    @GetMapping("/quiz/opentdb/start")
+    @PostMapping("/quiz/opentdb/start")
     public ResponseEntity<OpenTriviaResponse> startQuizFromOpentDb(@RequestBody QuizStartRequest request) {
         if (request.getAmount() <= 0 || request.getCategoryId() == null) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -76,7 +76,7 @@ public class QuizController {
         List<Answer> answers = request.getAnswers().stream()
                 .map(answerDto -> Answer.builder()
                         .content(answerDto.getContent())
-                        .isCorrect(answerDto.isCorrect())
+                        .estCorrect(answerDto.isCorrect())
                         .question(newQuestion) // Link Answer back to Question
                         .build())
                 .toList();

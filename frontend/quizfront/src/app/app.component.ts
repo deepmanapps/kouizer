@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component,inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { QuizService } from './quiz.service';
 
 // --- INTERFACES ---
 interface Question {
@@ -8,6 +9,12 @@ interface Question {
   text: string;
   options: string[];
   correctIndex: number;
+}
+
+interface requestPayload {
+  categoryId: number;
+  amount: number;
+  difficulty: string;
 }
 
 interface QuizConfig {
@@ -35,6 +42,8 @@ interface CustomQuestionForm {
   styles: []
 })
 export class AppComponent {
+  private quizServices = inject(QuizService);
+  results: any[] = [];
   // State Management
   currentView: 'home' | 'options' | 'quiz' | 'score' | 'create' = 'home';
 
@@ -138,6 +147,21 @@ export class AppComponent {
   // --- MAIN QUIZ LOGIC ---
 
   startQuiz() {
+   const rpayload : requestPayload = {
+      categoryId: 9,
+      amount: 1,
+      difficulty: 'MEDIUM'
+    };
+    this.quizServices.getQuestionsFromOpenTDB(rpayload).subscribe({
+      next: (response) => {
+        this.results = response.results;
+        console.log("DATA ==> ", this.results);
+      },
+      error: (err) => {
+        console.error("Error fetching quiz:", err);
+      }
+    });
+
     if (!this.nickname.trim() && this.currentView !== 'create') {
       this.showError = true;
       return;

@@ -23,7 +23,7 @@ public class Answer {
     private String content;
 
     @Column(name = "is_correct", nullable = false)
-    private boolean isCorrect;
+    private boolean estCorrect;
 
     @ToString.Exclude // Prevents circular reference loops in logs
     @ManyToOne(fetch = FetchType.LAZY)

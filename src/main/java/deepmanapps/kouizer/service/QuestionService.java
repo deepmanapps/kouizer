@@ -1,10 +1,10 @@
 package deepmanapps.kouizer.service;
 
 import deepmanapps.kouizer.domain.*;
-import deepmanapps.kouizer.dto.OpenTriviaQuestionDTO;
-import deepmanapps.kouizer.dto.OpenTriviaResponse;
-import deepmanapps.kouizer.dto.QuestionResponseDTO;
+import deepmanapps.kouizer.dto.*;
+import deepmanapps.kouizer.mapper.AnswerMapper;
 import deepmanapps.kouizer.mapper.QuestionMapper;
+import deepmanapps.kouizer.repository.AnswerRepository;
 import deepmanapps.kouizer.repository.CategoryRepository;
 import deepmanapps.kouizer.repository.QuestionRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,9 +24,11 @@ import java.util.Optional;
 public class QuestionService {
 
     private final QuestionRepository questionRepository;
+    private final AnswerRepository answerRepository;
     private final CategoryRepository categoryRepository;
     private final RestTemplate restTemplate = new RestTemplate(); // Or inject via Bean
     private final QuestionMapper questionMapper;
+    private final AnswerMapper answerMapper;
     private static final String OPEN_TRIVIA_URL = "https://opentdb.com/api.php?amount=";
 
     /**
@@ -35,20 +37,32 @@ public class QuestionService {
      */
     @Transactional
     public List<QuestionResponseDTO> getQuizQuestions(Long categoryId, int limit) {
-        // 1. Try to fetch from local DB first
+        List<QuestionAndAnswerEntry> questionAndAnswerEntries= null;
+        List<Question> questionsToBeReturned= new ArrayList<>();
         List<Question> questions = questionRepository.findRandomQuestionsByCategory(categoryId, limit);
-
-        // 2. If we don't have enough questions, fetch from API, save, and retry
+        List<Answer> answers = null;
         if (questions.size() < limit) {
             log.info("Not enough questions in DB for category {}. Fetching from OpenTriviaDB...", categoryId);
             fetchAndSaveQuestionsFromApi(categoryId,limit);
             // Fetch again after saving
             questions = questionRepository.findRandomQuestionsByCategory(categoryId, limit);
-
-
         }
+
+       /* for (Question quest: questions){
+            List<AnswerResponseDTO> answerResponseDTOS=null;
+            answers=loadRelatedAnswers(quest);
+            answerResponseDTOS=answerMapper.toAnswerResponseDTOs(answers);
+            quest.getAnswers().addAll(answers);
+            questionsToBeReturned.add(quest);
+        }*/
         
         return questionMapper.toQuestionResponseDTOs(questions);
+    }
+
+
+    public List<Answer> loadRelatedAnswers(Question question) {
+                List<Answer>  answers = answerRepository.findAnswersByQuestionId(question.getId());
+        return answers;
     }
 
     @Transactional
@@ -94,7 +108,7 @@ public class QuestionService {
                     // Map Correct Answer
                     Answer correct = Answer.builder()
                             .content(HtmlUtils.htmlUnescape(dto.getCorrectAnswer()))
-                            .isCorrect(true)
+                            .estCorrect(true)
                             .question(q) // Bi-directional link
                             .build();
                     q.getAnswers().add(correct);
@@ -103,7 +117,7 @@ public class QuestionService {
                     for (String incorrectStr : dto.getIncorrectAnswers()) {
                         Answer incorrect = Answer.builder()
                                 .content(HtmlUtils.htmlUnescape(incorrectStr))
-                                .isCorrect(false)
+                                .estCorrect(false)
                                 .question(q)
                                 .build();
                         q.getAnswers().add(incorrect);

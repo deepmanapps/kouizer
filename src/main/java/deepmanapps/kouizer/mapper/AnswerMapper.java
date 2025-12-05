@@ -13,6 +13,7 @@ import java.util.List;
         unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface AnswerMapper {
 
+    @Mapping(source = "estCorrect", target = "estCorrect")
     AnswerResponseDTO toAnswerResponseDTO(Answer answer);
 
     List<AnswerResponseDTO> toAnswerResponseDTOs(List<Answer> answers);

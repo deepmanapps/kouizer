@@ -1,5 +1,6 @@
 package deepmanapps.kouizer.mapper;
 
+import deepmanapps.kouizer.domain.Answer;
 import deepmanapps.kouizer.domain.Question;
 import deepmanapps.kouizer.dto.QuestionResponseDTO;
 import org.mapstruct.Mapper;
@@ -13,6 +14,12 @@ public interface QuestionMapper {
     @Mapping(source = "category.name", target = "categoryName") // Map nested field to flat field
     @Mapping(source = "answers", target = "answers") // MapStruct automatically uses AnswerMapper here
     QuestionResponseDTO toQuestionResponseDTO(Question question);
-    
+
+
     List<QuestionResponseDTO> toQuestionResponseDTOs(List<Question> questions);
+
+    @Mapping(source = "category.name", target = "categoryName")
+    List<QuestionResponseDTO> toQuestionResponseV2DTOs(List<Question> questions);
+
+
 }

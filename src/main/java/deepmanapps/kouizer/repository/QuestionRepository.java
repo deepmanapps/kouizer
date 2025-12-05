@@ -26,4 +26,5 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
     // Note: "ORDER BY RAND()" is efficient for small datasets but check performance for large ones
     @Query(value = "SELECT * FROM questions q WHERE q.category_id = :categoryId ORDER BY RAND() LIMIT :limit", nativeQuery = true)
     List<Question> findRandomQuestionsByCategory(@Param("categoryId") Long categoryId, @Param("limit") int limit);
+
 }
