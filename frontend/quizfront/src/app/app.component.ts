@@ -1,7 +1,8 @@
-import { Component,inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { QuizService } from './quiz.service';
+import { BehaviorSubject, Observable } from 'rxjs';
 
 // --- INTERFACES ---
 interface Question {
@@ -34,19 +35,19 @@ interface CustomQuestionForm {
   incorrect3: string;
 }
 
-interface opentdbData{
+interface opentdbData {
 
   response_code: number;
-  results : opentdbDataResults [];
+  results: opentdbDataResults[];
 
 }
 
-interface opentdbDataResults{
+interface opentdbDataResults {
   category: string;
   type: string;
   difficulty: string;
   question: string;
-  correct_answer:string;
+  correct_answer: string;
   incorrect_answers: string[];
 }
 
@@ -107,15 +108,22 @@ export class AppComponent {
   score: number = 0;
 
   // Data Stores
-  questions: Question[] = [];
+  private questionSubject = new BehaviorSubject<Question[]>([]);
+  question$: Observable<Question[]> = this.questionSubject.asObservable();
+
+  // Getter for synchronous template access
+  get questions(): Question[] {
+    return this.questionSubject.value;
+  }
+
   customQuestions: Question[] = []; // User created questions
 
   // Local Mock Fallback
   localQuestions: Question[] = [];
- // localQuestions: Question[] = [
+  // localQuestions: Question[] = [
   //  { id: 1, text: "Fallback: What is Angular?", options: ["Framework", "Library", "Database", "OS"], correctIndex: 0 },
   //  { id: 2, text: "Fallback: What is 2+2?", options: ["3", "4", "5", "6"], correctIndex: 1 }
- // ];
+  // ];
 
 
   // --- CREATOR LOGIC ---
@@ -162,11 +170,11 @@ export class AppComponent {
     this.startQuiz();
   }
 
-  callAndAdaptToQuestions(rpld : requestPayload): Question[]{
+  callAndAdaptToQuestions(rpld: requestPayload): Question[] {
 
-   let initQuestions : Question[] = [];
+    let initQuestions: Question[] = [];
 
-    const rpayload : requestPayload = {
+    const rpayload: requestPayload = {
       categoryId: 9,
       amount: 3,
       difficulty: 'MEDIUM'
@@ -176,94 +184,46 @@ export class AppComponent {
       next: (response) => {
         this.results = response;
         console.log("DATA ==> ", this.results);
-        let _opentdbData : opentdbData = this.results;
-        for(let obj of _opentdbData.results){
+        let _opentdbData: opentdbData = this.results;
+        for (let obj of _opentdbData.results) {
 
-            console.log("incorrect_answers ==> ", obj.incorrect_answers);
-              
-    }
+          console.log("incorrect_answers ==> ", obj.incorrect_answers);
+
+        }
       },
       error: (err) => {
         console.error("Error fetching quiz:", err);
       }
     });
-     return initQuestions;
+    return initQuestions;
   }
 
   // --- MAIN QUIZ LOGIC ---
- shuffleArray<T>(array: T[]): T[] {
-  for (let i = array.length - 1; i > 0; i--) {
-    // 1. Generate a random index 'j' between 0 and 'i' (inclusive).
-    // The Math.floor(Math.random() * (i + 1)) ensures a uniform random integer.
-    const j = Math.floor(Math.random() * (i + 1));
-    
-    // 2. Swap element at 'i' with the element at 'j'.
-    // This uses array destructuring for an efficient swap.
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-  
-  // Return the shuffled array.
-  return array;
+  shuffleArray<T>(array: T[]): T[] {
+    for (let i = array.length - 1; i > 0; i--) {
+      // 1. Generate a random index 'j' between 0 and 'i' (inclusive).
+      // The Math.floor(Math.random() * (i + 1)) ensures a uniform random integer.
+      const j = Math.floor(Math.random() * (i + 1));
 
-}
-
-findIndex(array: string[],correctAnswer:string): number{
-let foundIndex: number = -1;
-  array.forEach((q:string, index:number) => {
-      if(correctAnswer === q) foundIndex= index;
-  })
-  return foundIndex;
-
-}
-  startQuiz() {
-    // My test goes from here ...
-    let initQuestions : Question[] = [];
-    
-
-   const rpayload : requestPayload = {
-      categoryId: 9,
-      amount: 3,
-      difficulty: 'MEDIUM'
-    };
-    this.quizServices.getQuestionsFromOpenTDB(rpayload).subscribe({
-      next: (response) => {
-        this.results = response;
-        console.log("DATA ==> ", this.results);
-        let _opentdbData : opentdbData = this.results;
-        let i:number=_opentdbData.results.length+1;
-        let mixedQuestion:string[] =[];
-        for(let obj of _opentdbData.results){
-
-            console.log("obj ==> ", obj);
-            mixedQuestion.push(obj.correct_answer);
-            obj.incorrect_answers.forEach((q :string) => {
-              mixedQuestion.push(q);
-            })
-            mixedQuestion=this.shuffleArray<string>(mixedQuestion);
-            let oneQuestion: Question={
-                id: i,
-                text: obj.question,
-                options: mixedQuestion,
-                correctIndex: this.findIndex(mixedQuestion,obj.correct_answer)
-
-            };
-            initQuestions.push(oneQuestion)
-            //----------------
-            console.log("initQuestions ==> ", initQuestions);
-            this.localQuestions=initQuestions;
-            mixedQuestion=[];
+      // 2. Swap element at 'i' with the element at 'j'.
+      // This uses array destructuring for an efficient swap.
+      [array[i], array[j]] = [array[j], array[i]];
     }
-      },
-      error: (err) => {
-        console.error("Error fetching quiz:", err);
-      }
-    });
 
-    
+    // Return the shuffled array.
+    return array;
 
-    
-    // My test ends here ...
+  }
 
+  findIndex(array: string[], correctAnswer: string): number {
+    let foundIndex: number = -1;
+    array.forEach((q: string, index: number) => {
+      if (correctAnswer === q) foundIndex = index;
+    })
+    return foundIndex;
+
+  }
+  startQuiz() {
     if (!this.nickname.trim() && this.currentView !== 'create') {
       this.showError = true;
       return;
@@ -275,17 +235,67 @@ let foundIndex: number = -1;
     this.currentQuestionIndex = 0;
     this.score = 0;
 
-    // Load Data based on Source
+    // If using custom questions, set them immediately
     if (this.config.source === 'custom') {
-        this.questions = [...this.customQuestions];
-    } else {
-        // NOTE: In a real app with API, here is where you would use
-        // this.config.category, this.config.difficulty, etc. to fetch URL
-        this.questions = [...this.localQuestions];
+      this.questionSubject.next([...this.customQuestions]);
+      this.userAnswers = new Array(this.questionSubject.value.length).fill(null);
+      this.currentView = 'quiz';
+      return;
     }
 
-    this.userAnswers = new Array(this.questions.length).fill(null);
-    this.currentView = 'quiz';
+    // Otherwise, fetch from API
+    const rpayload: requestPayload = {
+      categoryId: 9,
+      amount: 3,
+      difficulty: 'MEDIUM'
+    };
+
+    this.quizServices.getQuestionsFromOpenTDB(rpayload).subscribe({
+      next: (response) => {
+        this.results = response;
+        console.log("DATA ==> ", this.results);
+
+        let _opentdbData: opentdbData = this.results;
+        let initQuestions: Question[] = [];
+        let i: number = 1;
+
+        for (let obj of _opentdbData.results) {
+          console.log("obj ==> ", obj);
+
+          let mixedQuestion: string[] = [];
+          mixedQuestion.push(obj.correct_answer);
+          obj.incorrect_answers.forEach((q: string) => {
+            mixedQuestion.push(q);
+          });
+
+          mixedQuestion = this.shuffleArray<string>(mixedQuestion);
+
+          let oneQuestion: Question = {
+            id: i++,
+            text: obj.question,
+            options: mixedQuestion,
+            correctIndex: this.findIndex(mixedQuestion, obj.correct_answer)
+          };
+
+          initQuestions.push(oneQuestion);
+        }
+
+        console.log("initQuestions ==> ", initQuestions);
+
+        // Update the Observable with the fetched questions
+        this.questionSubject.next(initQuestions);
+
+        // Initialize user answers array
+        this.userAnswers = new Array(this.questionSubject.value.length).fill(null);
+
+        // Switch to quiz view
+        this.currentView = 'quiz';
+      },
+      error: (err) => {
+        console.error("Error fetching quiz:", err);
+        alert("Failed to load quiz questions. Please check if the backend server is running on localhost:8080");
+      }
+    });
   }
 
   // --- UTILS ---
@@ -303,7 +313,7 @@ let foundIndex: number = -1;
   selectAnswer(optionIndex: number) { this.userAnswers[this.currentQuestionIndex] = optionIndex; }
 
   nextQuestion() {
-    if (this.currentQuestionIndex < this.questions.length - 1) this.currentQuestionIndex++;
+    if (this.currentQuestionIndex < this.questionSubject.value.length - 1) this.currentQuestionIndex++;
   }
 
   prevQuestion() {
@@ -317,7 +327,7 @@ let foundIndex: number = -1;
 
   calculateScore() {
     this.score = 0;
-    this.questions.forEach((q, index) => {
+    this.questionSubject.value.forEach((q, index) => {
       if (this.userAnswers[index] === q.correctIndex) this.score++;
     });
   }
